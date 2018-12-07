@@ -10,4 +10,9 @@ h5py
 netCDF4
 numpy
 
+----
+
+For the python examples, please ensure that you have python3 and Jupyter notebooks installed: A basic intro is here:
+https://jupyter.readthedocs.io/en/latest/install.html
+
 
