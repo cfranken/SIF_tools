@@ -67,18 +67,22 @@ class L2:
 		files = glob.glob(path)
 		# Check whether data has been initialized
 		nini = True
+		# How many soundings read
+		counter = 0
 		for file in files:
 			#print(file)
 
 			h = h5py.File(file,'r')
 			#h = Dataset("file, "r", format="NETCDF4")
-			print('opening ', file,  end='\r')
+			
 			try:
 				lat = h[dictionary['lat']][:]
 				lon = h[dictionary['lon']][:]
 				# find right indices:
 				wo = (lat>=latMin)&(lat<=latMax)&(lon>=lonMin)&(lon<=lonMax)
 				n = len(np.where(wo)[0])
+				counter+=n
+				print('opening ', file, ', # soundings: ', n,', Total #: ', counter, '             ',   end='\r')
 				if nini and n>0:
 					# For some reason, this doesn't work yet with my OCO-2 files, something is wrong with the files.
 					#try:
