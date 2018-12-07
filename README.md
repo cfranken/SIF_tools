@@ -11,7 +11,10 @@ h5py, netCDF4, numpy, matplotlib
 ----
 
 ### Download data:
-Download data first: paths for OCO-2 and TROPOMI data (in fact, the path just points to our internal structure of the ftp server at ftp://fluo.gps.caltech.edu/data/). The scripts will only focus on April through October 2018 (overlapping time period for TROPOMI and OCO-2)
+#### ftp://fluo.gps.caltech.edu/data/AGU_workshop/ 
+This provides a quick link to tar'ed directories (careful, large files!). You can download these and extract them on your computer.
+
+Traditional download: Paths for all OCO-2 and TROPOMI data: ftp://fluo.gps.caltech.edu/data/<satellite>. The scripts will only focus on April through October 2018 (overlapping time period for TROPOMI and OCO-2)
 
 ----
 
