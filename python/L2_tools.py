@@ -22,7 +22,11 @@ import h5py
 #from netCDF4 import Dataset
 import glob
 import traceback
+from netCDF4 import num2date
+from scipy.interpolate import interp1d
 
+shape_scope = np.loadtxt('sif_shape_scope.dat')
+shape_walz = np.loadtxt('PC1_SIFSpectra_allSpecies.dat')
 
 # This dictionary basically determines which data to read in (this can be changed!):
 dict_oco2 = {
@@ -64,11 +68,11 @@ class L2:
 		# Check whether data has been initialized
 		nini = True
 		for file in files:
-			print(file)
+			#print(file)
 
 			h = h5py.File(file,'r')
 			#h = Dataset("file, "r", format="NETCDF4")
-			print('opening ', file)
+			print('opening ', file,  end='\r')
 			try:
 				lat = h[dictionary['lat']][:]
 				lon = h[dictionary['lon']][:]
@@ -108,3 +112,60 @@ def compPhase(sza, saa, vza, vaa):
 	raa = np.abs(raa)
 	cos_theta = np.cos(vza/p)*np.cos(sza/p) + np.sin(vza/p)*np.sin(sza/p)*np.cos(raa/p);
 	return np.arccos(cos_theta)*p*phase
+
+# Converts times in t_unit (string) and calendar t_cal (string) to a python datetime
+def convert_time(nctime, t_unit, t_cal):
+	datevar = []
+	datevar.append(num2date(nctime,units = t_unit,calendar = t_cal))
+	return datevar[0]
+
+# Empty class (mimics Matlab structure capabilities)
+class Timeseries:
+    pass
+
+# Creates a running mean of data
+def sif_rMean(time_in, var_in, time_out, dTime):
+
+	# Am lazy here, just creating an ordinal timestamp first (units of days)
+	time_in_ord = np.asarray([x.toordinal() for x in time_in])
+	time_out_ord = np.asarray([x.toordinal() for x in time_out])
+	var_out = Timeseries()
+	var_out.time = time_out
+	# save a couple of statistics here:
+	var_out.mean = np.zeros((len(time_out),))
+	var_out.median = np.zeros((len(time_out),))
+	var_out.perc90 = np.zeros((len(time_out),))
+	var_out.perc10 =np.zeros((len(time_out),))
+	var_out.std =np.zeros((len(time_out),))
+	var_out.n =np.zeros((len(time_out),))
+	var_out.standard_error =np.zeros((len(time_out),))
+	
+	for it in range(len(time_out_ord)):
+		t = time_out_ord[it]
+		wo = np.where(np.abs(time_in_ord-t)<dTime)[0]
+		if len(wo)>1:
+			var_out.mean[it]=np.mean(var_in[wo])
+			var_out.median[it] =np.median(var_in[wo])
+			var_out.perc90[it] =np.percentile(var_in[wo],90)
+			var_out.perc10[it] =np.percentile(var_in[wo],10)
+			var_out.std[it]    =np.std(var_in[wo])
+			var_out.n[it] =len(wo)
+			# This is trained on data, not the theoretical one:
+			var_out.standard_error[it] = np.std(var_in[wo])/np.sqrt(len(wo))
+		else:
+			var_out.mean[it]=np.nan
+			var_out.median[it] =np.nan
+			var_out.perc90[it] =np.nan
+			var_out.perc10[it] =np.nan
+			var_out.std[it]    =np.nan
+			var_out.n[it] =len(wo)
+			# This is trained on data, not the theoretical one:
+			var_out.standard_error[it] = np.nan
+
+	
+	return var_out
+
+def convertWL(wl_in,wl_out,shape):
+	f = interp1d(shape[:,0], shape[:,1],kind='cubic')
+	return f(wl_out)/f(wl_in)
+
