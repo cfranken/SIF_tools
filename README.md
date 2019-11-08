@@ -53,7 +53,7 @@ And to attach the command line of this container run to your terminal run
 
 Now you’re ready to develop! You can start a jupyter notebook server from the Docker container command line with:
 
-	jupyter notebook --allow-root /host --ip 0.0.0.0
+`jupyter notebook --allow-root /host --ip 0.0.0.0`
 
 You’ll now be able to access your jupyter notebooks by navigating your browser to the address 127.0.0.1:<port> where the port is the one you specified above (e.g. 8888). The Docker container had your regular directories mounted at /host and because we’ve told the jupyter notebook with the above command to use /host as the root directory you should see all your files just like you would on your own computer but now you can access them from Docker.
 
@@ -67,5 +67,8 @@ Then start that env by running:
 
 `source activate earthml`
 
+Once that environment is active you can just run:
+
+`jupyter notebook`
 
 ![NIR pic of Oak tree in front of Linde center](http://web.gps.caltech.edu/~cfranken/linde_small.jpg)
