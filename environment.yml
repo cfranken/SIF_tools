@@ -30,3 +30,4 @@ dependencies:
   - pip:
     - rio-toa
     - nc-time-axis
+    - netCDF4
