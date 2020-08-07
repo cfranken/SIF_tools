@@ -155,13 +155,14 @@ makeTransparent = function(..., alpha=0.5){
 
 }
 
-colocate_sat1_sat2 <- function(date.range, sat1.bundle, sat2.bundle){
+colocate_sat1_sat2 <- function(date.range, sat1.bundle, sat2.bundle,jj_v28=FALSE){
+## jj_v28=FALSE, set to true to workaround different time structure in Joanna's GOME-2 files
 ## loop through given date range and look for close soundings
 ## goal is to get two data sets to be merged in a second step, later on: filter for close time and geometry...
 ref.ras      <- raster()
 res(ref.ras) <- 0.5
 
-### sat1=bigger footprints, sat2=smaller footprints, 
+### sat1=bigger footprints, sat2=smaller footprints,
 ### important because IDs are attached to the satellite with the bigger footprint
 coloc.sat1 <- data.table()
 coloc.sat2 <- data.table()
@@ -218,37 +219,42 @@ for (daydate in date.seq){
   if (length(idx.drop)>=1) sat2 <- sat2[-idx.drop,]
 
   ## attach time in UTC:
-  sat1$utc <- as.POSIXct(sat1$time, origin=sat1.time.origin,tz="UTC")
+  ## workaround for Joanna's GOME-2 files:
+  if (jj_v28) sat1$utc <- as.POSIXct(paste(as.Date(daydate),sat1$time,"UTC"))
+  else sat1$utc <- as.POSIXct(sat1$time, origin=sat1.time.origin,tz="UTC")
+
   sat2$utc <- as.POSIXct(sat2$time, origin=sat2.time.origin ,tz="UTC")
 
   n.poly  <- dim(sat1)[1]
-  print(paste0("Co-location..."))
-  pb <- txtProgressBar(min = 0, max = n.poly, style = 3) ##intialize progress bar
-  for (i.poly in 1:n.poly){
-    setTxtProgressBar(pb, i.poly) ##update progress bar
-    #i.poly <- 1
-    pol.x          <- c(sat1$lon1[i.poly],sat1$lon2[i.poly],sat1$lon3[i.poly],sat1$lon4[i.poly])
-    pol.y          <- c(sat1$lat1[i.poly],sat1$lat2[i.poly],sat1$lat3[i.poly],sat1$lat4[i.poly])
+  if (n.poly >= 1){
+    print(paste0("Co-location..."))
+    pb <- txtProgressBar(min = 0, max = n.poly, style = 3) ##intialize progress bar
+    for (i.poly in 1:n.poly){
+      setTxtProgressBar(pb, i.poly) ##update progress bar
+      #i.poly <- 1
+      pol.x          <- c(sat1$lon1[i.poly],sat1$lon2[i.poly],sat1$lon3[i.poly],sat1$lon4[i.poly])
+      pol.y          <- c(sat1$lat1[i.poly],sat1$lat2[i.poly],sat1$lat3[i.poly],sat1$lat4[i.poly])
 
-    tmp.hit <- point.in.polygon(sat2$clon,sat2$clat,pol.x,pol.y)
-    hit.idx <- which(tmp.hit==1)
-    if (length(hit.idx) >= 1){
-      ## create joint data set here if there are indeed soundings within the bigger footprint for that specific day...
-      sat1ID <- sat1ID+1
+      tmp.hit <- point.in.polygon(sat2$clon,sat2$clat,pol.x,pol.y)
+      hit.idx <- which(tmp.hit==1)
+      if (length(hit.idx) >= 1){
+        ## create joint data set here if there are indeed soundings within the bigger footprint for that specific day...
+        sat1ID <- sat1ID+1
 
-      coloc.sat1.tmp        <- sat1[i.poly,]
-      coloc.sat1.tmp$sat1ID <- sat1ID
-      coloc.sat2.tmp        <- sat2[hit.idx,]
-      coloc.sat2.tmp$sat1ID <- rep(sat1ID,length(hit.idx))
+        coloc.sat1.tmp        <- sat1[i.poly,]
+        coloc.sat1.tmp$sat1ID <- sat1ID
+        coloc.sat2.tmp        <- sat2[hit.idx,]
+        coloc.sat2.tmp$sat1ID <- rep(sat1ID,length(hit.idx))
 
-      l           <- list(coloc.sat1,coloc.sat1.tmp)
-      coloc.sat1 <- rbindlist(l)
+        l           <- list(coloc.sat1,coloc.sat1.tmp)
+        coloc.sat1 <- rbindlist(l)
 
-      l           <- list(coloc.sat2,coloc.sat2.tmp)
-      coloc.sat2  <- rbindlist(l)
+        l           <- list(coloc.sat2,coloc.sat2.tmp)
+        coloc.sat2  <- rbindlist(l)
+      }
     }
-  }
-  close(pb) ##close progress bar
+    close(pb) ##close progress bar
+  }#else print("No overlapping soundings found for ... ")  
   ## store intermediate results?:
   #jdata <- list(tropo=coloc.tropo,gome2=coloc.gome2)
   #save.name <- paste0(out.dir,"/co-located_tropo-gome2_",ac.date,".RData")
@@ -281,5 +287,3 @@ ps.names <- paste("ps",idx,sep="")
 rm(list=c(ps.names,"ps.names","ps.name","p.name"))
 return(sps)
 }
-
-
