@@ -176,12 +176,14 @@ for (daydate in date.seq){
   print(paste0("Reading: ", as.Date(daydate),", found so far:", sat1ID))
   #### Sat1 (bigger footprints)
   idx.sat1.ncfiles      <- which(sat1.bundle$NCdates == daydate)
+  if (length(idx.sat1.ncfiles) > 0){
   sat1.bundle.tmp       <- sat1.bundle
   sat1.bundle.tmp$files <- sat1.bundle$files[idx.sat1.ncfiles]
   sat1                  <- collect_dt_NC(sat1.bundle.tmp)
 
   #### Sat2 (smaller footprints)
   idx.sat2.ncfiles      <- which(sat2.bundle$NCdates == daydate)
+  if (length(idx.sat2.ncfiles) > 0){
   sat2.bundle.tmp       <- sat2.bundle
   sat2.bundle.tmp$files <- sat2.bundle$files[idx.sat2.ncfiles]
   sat2                  <- collect_dt_NC(sat2.bundle.tmp)
@@ -252,16 +254,13 @@ for (daydate in date.seq){
         l           <- list(coloc.sat2,coloc.sat2.tmp)
         coloc.sat2  <- rbindlist(l)
       }
-    }
+    }##for (i.poly in 1:n.poly)
     close(pb) ##close progress bar
-  }#else print("No overlapping soundings found for ... ")  
-  ## store intermediate results?:
-  #jdata <- list(tropo=coloc.tropo,gome2=coloc.gome2)
-  #save.name <- paste0(out.dir,"/co-located_tropo-gome2_",ac.date,".RData")
-  #print(paste0("Saving joint data set at: ", save.name))
-  #save(jdata, file=save.name)
-}
-}
+  }## if (n.poly >= 1)
+}## if (length(dim(sat2)[1]) != 0)
+}## if (length(idx.sat2.ncfiles) > 0)
+}## if (length(idx.sat1.ncfiles) > 0){
+}## for (daydate in date.seq)
 return(list(sat1=coloc.sat1,sat2=coloc.sat2))
 }
 
