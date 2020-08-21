@@ -35,14 +35,37 @@ collect_dt_NC <- function(bundle,...){
           idx.lon <- grep("lon",nc.dict.bnds, ignore.case=TRUE)
           ## dimension for boundaries should be 4, but the dimension can change:
           bnd.dim <- dim(eval(parse(text=names(nc.dict.bnds)[1])))
+          ## need to sort the boundary coordinates such that they result in a closed polygon:
+          ## 1:SE, 2: NE, 3:NW, 4: SW !!!assuming orientation does not change!!!
+           if (bnd.dim[1] == 4){
+             bnd.dim.struc.test <- function(i.bnd) return(paste0("[",i.bnd,",1]"))
+           }else if (bnd.dim[2] == 4){
+             bnd.dim.struc.test <- function(i.bnd) return(paste0("[1,",i.bnd,"]"))
+           }
+
+          for (i.bnd in 1:4){
+            eval(parse(text=paste0("test.lat", i.bnd, " <- ", names(nc.dict.bnds)[idx.lat],bnd.dim.struc.test(i.bnd))))
+            eval(parse(text=paste0("test.lon", i.bnd, " <- ", names(nc.dict.bnds)[idx.lon],bnd.dim.struc.test(i.bnd))))
+          }
+          co.tuple <- rbind(c(test.lon1,test.lat1),c(test.lon2,test.lat2),c(test.lon3,test.lat3),c(test.lon4,test.lat4))
+          s.idx  <- order(co.tuple[,2])[c(1,2)]
+          n.idx  <- order(co.tuple[,2])[c(3,4)]
+          se.idx <- s.idx[which.max(co.tuple[s.idx,1])]
+          ne.idx <- n.idx[which.max(co.tuple[n.idx,1])]
+          nw.idx <- n.idx[which.min(co.tuple[n.idx,1])]
+          sw.idx <- s.idx[which.min(co.tuple[n.idx,1])]
+          orientation <- c(se.idx,ne.idx,nw.idx,sw.idx)
+          #################
+
           if (bnd.dim[1] == 4){
              bnd.dim.struc <- function(i.bnd) return(paste0("[",i.bnd,",]"))
            }else if (bnd.dim[2] == 4){
              bnd.dim.struc <- function(i.bnd) return(paste0("[,",i.bnd,"]"))
            }
-          for (i.bnd in 1:4){
-            eval(parse(text=paste0("tmp$lat", i.bnd, " <- ", names(nc.dict.bnds)[idx.lat],bnd.dim.struc(i.bnd))))
-            eval(parse(text=paste0("tmp$lon", i.bnd, " <- ", names(nc.dict.bnds)[idx.lon],bnd.dim.struc(i.bnd))))
+
+           for (i.bnd in 1:4){
+            eval(parse(text=paste0("tmp$lat", i.bnd, " <- ", names(nc.dict.bnds)[idx.lat],bnd.dim.struc(orientation[i.bnd]))))
+            eval(parse(text=paste0("tmp$lon", i.bnd, " <- ", names(nc.dict.bnds)[idx.lon],bnd.dim.struc(orientation[i.bnd]))))
           }
           tmp  <- as.data.table(tmp)
           ### abstracted to switch between filter criteria:
